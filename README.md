@@ -24,18 +24,22 @@ Please use a standard checkerboard, and count the number of insider corners. For
 
 With the calibration file ready, you can use it in the following to apply calibration to every video frame via `cv2.undistort()` utility:
 ```python
+import cv2
 import numpy as np
 from picamera2 import Picamera2
 import time
 
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
+
 calibration_data = np.load("/home/rob/Documents/cam/cv/camera_calib.npz")
 try:
-    picam2 = Picamera2()
-    config = picam2.create_preview_configuration(
+    camera = Picamera2()
+    config = camera.create_preview_configuration(
         main={"size": (FRAME_WIDTH, FRAME_HEIGHT), "format": "RGB888"}
     )
-    picam2.configure(config)
-    picam2.start()
+    camera.configure(config)
+    camera.start()
     time.sleep(2)  # Camera warm-up
     while True:
         frame = camera.capture_array()
@@ -56,12 +60,20 @@ If the camera's len is fixed without changing the angle, we also only need to do
 
 For this, we need a rectangle shape mat or paper. Before the calibration, we need measure its dimension and horizontal distance to the camera (e.g., `REAL_MAT_W_CM = 33.3`, `REAL_MAT_H_CM = 63.0`, and `MAT_DIST_FROM_CAMEMRA_CM = 30.0`). 
 
-- Place the printed checkerboard paper on a flat surface. Any warps or bends in the board will ruin the calibration.
-- The [provideded program src/calibrate_bev.py](src/calibrate_bev.py) can be used to finish the extrinsic calibration . Please modify the parameters accordingly. 
+![bev_cali](/img/bev_cali.jpg)
+
+- Place the calibration mat on a flat surface. Any warps or bends in the board will influence the calibration. Please try to make it as flat as possible, especially when this mat is big: to achieve this, you can put some paper weight on top -- only the positions of four corners of this mat would matter. 
+- The [provideded program src/calibrate_bev.py](src/calibrate_bev.py) can be used to finish the extrinsic calibration . Please modify the parameters accordingly. Similar to the program for intrinsic calibration, run this calibrate_bev.py program also under the Python virtual environment. This program will show a preview of the camera's view where the calibration mat is captured, and we need to use the mouse to click on different corners of the calibration mat in the order of (1) top left -> (2) top right -> (3) bottom right -> (4) bottom left. And then click 'q' on the keyboard to end this program. 
 - This calibration program will output a file `camera_calib.json`, 
 
-With the calibration file, we can convert the original view into bird's eye view for more convenient geometry calculation, by `cv2.warpPerspective()` utility:
+The calibration process can be illustrated as:
+
+![cali process](img/cali_preview.png)
+
+With the calibration file, we can convert the original view into bird's eye view for more convenient geometry calculation, via `cv2.warpPerspective()` utility:
 ```python
+import json
+
 with open("camera_calib.json", "r") as f:
         calib = json.load(f)
 
@@ -79,3 +91,21 @@ try:
 finally:
     # copy the preview program here
 ```
+
+Once this is done, the geometry relations in the video frames of bird's eye view (BEV) would be aligned with the real world, so it's would be very intruitive to further process the video frames. Clear evidences could include:
+- Parallel lines are recovered: in the original view, parallel lines will converge. 
+- Lines with the same length will appear the same: in the original view, the same line appears longer when it's closer to the camera. 
+
+| Original view of calibration mat | Bird's eye view of the calibration mat |
+| :---: | :---: |
+| ![diagram4](img/preview_cali.png) | ![diagram5](img/bev.png) | 
+
+| Original view of parallel parking bay | Bird's eye view of the parallel parking bay |
+| :---: | :---: |
+| ![diagram6](img//preview_para.png) | ![diagram7](img/bev_para.png) | 
+
+| Original view of forward parking bay | Bird's eye view of the forward parking bay |
+| :---: | :---: |
+| ![diagram8](img/preview_fwd.png) | ![diagram9](img/bev_fwd.png) | 
+
+Please note: the angle of view of our camera is about 45 degree, and this is aligned with the result in the BEV. The top right corner here is also black, and this might be because the camera is not placed perfectly horizontal or the camera's sensor covers uneven area in the vision. 
