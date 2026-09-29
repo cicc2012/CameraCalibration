@@ -54,11 +54,13 @@ finally:
     cv2.destroyAllWindows()
 ```
 
+In this program, we use keyboard control: press 'q' to ternimate. You can define your own keyboard interaction to achieve other functionalities, e.g., 'b' for Bluetooth connection, 'm' for message or move, etc. 
+
 ## 2. Extrinsic Calibration
 
 If the camera's len is fixed without changing the angle, we also only need to do this extrinsic calibration once. But our camera's angle would be changed almost every time when we get it out of the box. So we need to do the following calibration everyday. The idea here is to support the accurate mapping between real world and camera view, e.g., we will be able to estimate the real location or real length of the object in the real world based on the camera's view. 
 
-For this, we need a rectangle shape mat or paper. Before the calibration, we need measure its dimension and horizontal distance to the camera (e.g., `REAL_MAT_W_CM = 33.3`, `REAL_MAT_H_CM = 63.0`, and `MAT_DIST_FROM_CAMEMRA_CM = 30.0`). 
+For this, we need a rectangle shape mat or paper. Before the calibration, we need measure its dimension and horizontal distance to the camera (e.g., `REAL_MAT_W_CM = 33.3`, `REAL_MAT_H_CM = 63.0`, and `MAT_DIST_FROM_CAMEMRA_CM = 30.0`). And rectangle-shape flat paper would do the work. 
 
 ![bev_cali](/img/bev_cali.jpg)
 
